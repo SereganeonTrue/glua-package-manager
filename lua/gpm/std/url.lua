@@ -415,7 +415,7 @@ local function punycodeEncode( str, startPos, endPos )
 
 	-- Initialize the state
 	local n = initialN
-	local input = utf8Decode(str, startPos, endPos)
+	local input = utf8Decode( str, startPos, endPos )
 	local inputLen = #input
 	local output = {}
 	local delta = 0
@@ -423,11 +423,11 @@ local function punycodeEncode( str, startPos, endPos )
 	local bias = initialBias
 
 	-- Handle the basic code points
-	for _index_0 = 1, #input do
-		local ch = input[_index_0]
+	for i = 1, #input, 1 do
+		local ch = input[ i ]
 		if ch < 0x80 then
 			out = out + 1
-			output[out] = string_char(ch)
+			output[ out ] = string_char( ch )
 		end
 	end
 
@@ -437,30 +437,30 @@ local function punycodeEncode( str, startPos, endPos )
 	local b = out
 	if b > 0 then
 		out = out + 1
-		output[out] = string_char(delimiter)
+		output[ out ] = string_char( delimiter )
 	end
 
 	-- Main encoding loop
 	while h < inputLen do
 		-- All non-basic code points < n have been handled already. Find the next larger one
 		local m = 0x7FFFFFFF
-		for _index_0 = 1, #input do
-			local ch = input[_index_0]
+		for i = 1, #input, 1 do
+			local ch = input[ i ]
 			if ch >= n and ch < m then
 				m = ch
 			end
 		end
 
 		-- Increase delta enough to advance the decoder's <n,i> state to <m,0>, but guard against overflow
-		if m - n > (0x7FFFFFFF - delta) / (h + 1) then
-			error("Invalid URL: Punycode overflow")
+		if m - n > ( 0x7FFFFFFF - delta ) / ( h + 1 ) then
+			error( "Invalid URL: Punycode overflow" )
 		end
 
-		delta = delta + ((m - n) * (h + 1))
+		delta = delta + ( ( m - n ) * ( h + 1 ) )
 		n = m
 
-		for _index_0 = 1, #input do
-			local ch = input[_index_0]
+		for i = 1, #input, 1 do
+			local ch = input[ i ]
 			-- Punycode does not need to check whether input[j] is basic:
 			if ch < n then
 				delta = delta + 1
@@ -479,25 +479,25 @@ local function punycodeEncode( str, startPos, endPos )
 						break
 					end
 
-					local d = t + (q - t) % (base - t)
+					local d = t + ( q - t ) % ( base - t )
 					out = out + 1
-					output[out] = string_char(d + 22 + (d < 26 and 75 or 0))
-					q = math_floor((q - t) / (base - t))
+					output[ out ] = string_char( d + 22 + ( d < 26 and 75 or 0 ) )
+					q = math_floor( ( q - t ) / ( base - t ) )
 					k = k + base
 				end
 
 				out = out + 1
-				output[out] = string_char(q + 22 + (q < 26 and 75 or 0))
+				output[ out ] = string_char( q + 22 + ( q < 26 and 75 or 0 ) )
 				k = 0
 
-				delta = h == b and math_floor(delta / damp) or bit_rshift(delta, 1)
-				delta = delta + math_floor(delta / (h + 1))
-				while delta > ((base - tMin) * tMax) / 2 do
-					delta = math_floor(delta / (base - tMin))
+				delta = h == b and math_floor( delta / damp ) or bit_rshift( delta, 1 )
+				delta = delta + math_floor( delta / ( h + 1 ) )
+				while delta > ( ( base - tMin ) * tMax ) / 2 do
+					delta = math_floor( delta / ( base - tMin ) )
 					k = k + base
 				end
 
-				bias = math_floor(k + (base - tMin + 1) * delta / (delta + skew))
+				bias = math_floor( k + ( base - tMin + 1 ) * delta / ( delta + skew ) )
 				delta = 0
 				h = h + 1
 			end
@@ -507,21 +507,21 @@ local function punycodeEncode( str, startPos, endPos )
 		n = n + 1
 	end
 
-	return table_concat(output, "", 1, out)
+	return table_concat( output, "", 1, out )
 end
 
-local function parseIPv4InIPv6(str, pointer, endPos, address, pieceIndex)
+local function parseIPv4InIPv6( str, pointer, endPos, address, pieceIndex )
 	local numbersSeen = 0
 	while pointer <= endPos do
 		local ipv4Piece = nil
-		local ch = string_byte(str, pointer)
+		local ch = string_byte( str, pointer )
 		if numbersSeen > 0 then
-			if not (ch == 0x2E and numbersSeen < 4) then
-				error("Invalid URL: IPv4 in IPv6 invalid code point")
+			if not ( ch == 0x2E and numbersSeen < 4 ) then
+				error( "Invalid URL: IPv4 in IPv6 invalid code point" )
 			end
 
 			pointer = pointer + 1
-			ch = pointer <= endPos and string_byte(str, pointer)
+			ch = pointer <= endPos and string_byte( str, pointer )
 		end
 
 		while ch and isDigit( ch ) do
@@ -567,9 +567,9 @@ local function parseIPv6( str, startPos, endPos )
 	local pieceIndex = 1
 	local compress = nil
 
-	if string_byte(str, startPos) == 0x3A then
-		if startPos == endPos or string_byte(str, startPos + 1) ~= 0x3A then
-			error("Invalid URL: IPv6 invalid compression")
+	if string_byte( str, startPos ) == 0x3A then
+		if startPos == endPos or string_byte( str, startPos + 1 ) ~= 0x3A then
+			error( "Invalid URL: IPv6 invalid compression" )
 		end
 
 		pointer = pointer + 2
@@ -579,13 +579,13 @@ local function parseIPv6( str, startPos, endPos )
 
 	while pointer <= endPos do
 		if pieceIndex == 9 then
-			error("Invalid URL: IPv6 too many pieces")
+			error( "Invalid URL: IPv6 too many pieces" )
 		end
 
-		local ch = string_byte(str, pointer)
+		local ch = string_byte( str, pointer )
 		if ch == 0x3A then
 			if compress then
-				error("Invalid URL: IPv6 multiple compression")
+				error( "Invalid URL: IPv6 multiple compression" )
 			end
 
 			pointer = pointer + 1
@@ -596,33 +596,33 @@ local function parseIPv6( str, startPos, endPos )
 
 		local value = 0
 		local length = 0
-		while length < 4 and ch and isHexDigit(ch) do
-			value = value * 0x10 + hexToDec(ch)
+		while length < 4 and ch and isHexDigit( ch ) do
+			value = value * 0x10 + hexToDec( ch )
 			pointer = pointer + 1
 			length = length + 1
-			ch = pointer <= endPos and string_byte(str, pointer)
+			ch = pointer <= endPos and string_byte( str, pointer )
 		end
 
 		if ch == 0x2E then
 			if length == 0 then
-				error("Invalud URL: IPv4 in IPv6 invalid code point")
+				error( "Invalud URL: IPv4 in IPv6 invalid code point" )
 			end
 			pointer = pointer - length
 			if pieceIndex > 7 then
-				error("Invalid URL: IPv4 in IPv6 too many pieces")
+				error( "Invalid URL: IPv4 in IPv6 too many pieces" )
 			end
-			pieceIndex = parseIPv4InIPv6(str, pointer, endPos, address, pieceIndex)
+			pieceIndex = parseIPv4InIPv6( str, pointer, endPos, address, pieceIndex )
 			break
 		elseif ch == 0x3A then
 			pointer = pointer + 1
 			if pointer > endPos then
-				error("Invalid URL: IPv6 invalid code point")
+				error( "Invalid URL: IPv6 invalid code point" )
 			end
 		elseif pointer <= endPos then
-			error("Invalid URL: IPv6 invalid code point")
+			error( "Invalid URL: IPv6 invalid code point" )
 		end
 
-		address[pieceIndex] = value
+		address[ pieceIndex ] = value
 		pieceIndex = pieceIndex + 1
 		::_continue_0::
 	end
@@ -631,14 +631,14 @@ local function parseIPv6( str, startPos, endPos )
 		local swaps = pieceIndex - compress
 		pieceIndex = 8
 		while pieceIndex ~= 1 and swaps > 0 do
-			local value = address[pieceIndex]
-			address[pieceIndex] = address[compress + swaps - 1]
-			address[compress + swaps - 1] = value
+			local value = address[ pieceIndex ]
+			address[ pieceIndex ] = address[ compress + swaps - 1 ]
+			address[ compress + swaps - 1 ] = value
 			swaps = swaps - 1
 			pieceIndex = pieceIndex - 1
 		end
 	elseif pieceIndex ~= 9 then
-		error("Invalid URL: IPv6 too few pieces")
+		error( "Invalid URL: IPv6 too few pieces" )
 	end
 
 	return address
@@ -699,9 +699,9 @@ local function parseIPv4( str, startPos, endPos )
 	local pointer = startPos
 
 	while true do
-		local ch = pointer <= endPos and string_byte(str, pointer)
+		local ch = pointer <= endPos and string_byte( str, pointer )
 		if not ch or ch == 0x2E then
-			local num = parseIPv4Number(string_sub(str, startPos, pointer - 1))
+			local num = parseIPv4Number( string_sub( str, startPos, pointer - 1 ) )
 			if not num then
 				if pointer > endPos and #numbers > 0 then
 					break
@@ -722,41 +722,40 @@ local function parseIPv4( str, startPos, endPos )
 	end
 
 	if #numbers > 4 then
-		error("Invalid URL: IPv4 too many parts")
+		error( "Invalid URL: IPv4 too many parts" )
 	end
 
 	for i = 1, #numbers - 1 do
-		if numbers[i] > 255 then
-			error("Invalid URL: IPv4 out of range part")
+		if numbers[ i ] > 255 then
+			error( "Invalid URL: IPv4 out of range part" )
 		end
 	end
 
-	if numbers[#numbers] >= 256 ^ (5 - #numbers) then
-		error("Invalid URL: IPv4 out of range part")
+	if numbers[ #numbers ] >= 256 ^ ( 5 - #numbers ) then
+		error("Invalid URL: IPv4 out of range part" )
 	end
 
-	local ipv4 = numbers[#numbers]
+	local ipv4 = numbers[ #numbers ]
 	local counter = 0
 	for i = 1, #numbers - 1 do
-		ipv4 = ipv4 + (numbers[i] * 256 ^ (3 - counter))
+		ipv4 = ipv4 + ( numbers[ i ] * 256 ^ (3  - counter ) )
 		counter = counter + 1
 	end
 
 	return ipv4
 end
 
-local domainToASCII
-domainToASCII = function(domain)
+local function domainToASCII( domain )
 	for i = 1, #domain do
-		if string_byte(domain, i) > 0x7F then
+		if string_byte( domain, i ) > 0x7F then
 			-- Remove special symbols that are ignored
 			-- I probably really should implement some proper punycode
-			domain = string_gsub(domain, "\xC2\xAD", "")
-			domain = string_gsub(domain, "\xE3\x80\x82", ".")
+			domain = string_gsub( domain, "\xC2\xAD", "" )
+			domain = string_gsub( domain, "\xE3\x80\x82", "." )
 			-- remove space characters
-			domain = string_gsub(domain, "\xE2\x80\x8B", "")
-			domain = string_gsub(domain, "\xE2\x81\xA0", "")
-			domain = string_gsub(domain, "\xEF\xBB\xBF", "")
+			domain = string_gsub( domain, "\xE2\x80\x8B", "" )
+			domain = string_gsub( domain, "\xE2\x81\xA0", "" )
+			domain = string_gsub( domain, "\xEF\xBB\xBF", "" )
 			break
 		end
 	end
@@ -769,21 +768,21 @@ domainToASCII = function(domain)
 	local parts = {}
 
 	while true do
-		local ch = string_byte(domain, pointer)
+		local ch = string_byte( domain, pointer )
 		if not ch or ch == 0x2E then
 			-- decode an find errors
 			if punycodePrefix == 4 and containsNonASCII then
-				error("Invalid URL: Domain invalid code point")
+				error( "Invalid URL: Domain invalid code point" )
 			end
 
-			local domainPart = containsNonASCII and "xn--" .. punycodeEncode(domain, partStart, pointer - 1) or string_sub(domain, partStart, pointer - 1)
+			local domainPart = containsNonASCII and "xn--" .. punycodeEncode( domain, partStart, pointer - 1 ) or string_sub( domain, partStart, pointer - 1 )
 			-- btw, punycode decode lowercases the domain, so we need to lowercase it
 			-- in ideal sutiation I should have written punycodeDecode, but I am not in the mood to write it
 			if doLowerCase then
-				domainPart = string_lower(domainPart)
+				domainPart = string_lower( domainPart )
 			end
 
-			parts[#parts + 1] = domainPart
+			parts[ #parts + 1 ] = domainPart
 			partStart = pointer + 1
 			containsNonASCII = false
 			doLowerCase = false
@@ -793,16 +792,16 @@ domainToASCII = function(domain)
 			end
 		elseif ch > 0x7F then
 			containsNonASCII = true
-		elseif PUNYCODE_PREFIX[pointer - partStart + 1] == ch then
+		elseif PUNYCODE_PREFIX[ pointer - partStart + 1 ] == ch then
 			punycodePrefix = punycodePrefix + 1
-		elseif isUpper(ch) then
+		elseif isUpper( ch ) then
 			doLowerCase = true
 		end
 
 		pointer = pointer + 1
 	end
 
-	return table_concat(parts, ".")
+	return table_concat( parts, "." )
 end
 
 local function parseHostString( str, startPos, endPos, isSpecial )
@@ -841,23 +840,23 @@ local parseRelative, parseRelativeSlash, parseSpecialAuthorityIgnoreSlashes, par
 local parseHost, parsePort, parseFile, parseFileSlash, parseFileHost, parsePathStart, parsePath, parseOpaquePath
 local parseQuery, parseFragment
 
-parseScheme = function(self, str, startPos, endPos, base, stateOverride)
+function parseScheme( self, str, startPos, endPos, base, stateOverride )
 	-- scheme start state
-	if startPos <= endPos and isAlpha(string_byte(str, startPos)) then
+	if startPos <= endPos and isAlpha( string_byte( str, startPos ) ) then
 		-- scheme state
 		local doLowerCase = false
 		local scheme = nil
 		for i = startPos, endPos do
-			local ch = string_byte(str, i)
+			local ch = string_byte( str, i )
 			if ch == 0x3A then
-				scheme = string_sub(str, startPos, i - 1)
+				scheme = string_sub( str, startPos, i - 1 )
 				if doLowerCase then
-					scheme = string_lower(scheme)
+					scheme = string_lower( scheme )
 				end
 
-				local isSpecial = SPECIAL_SCHEMAS[scheme]
+				local isSpecial = SPECIAL_SCHEMAS[ scheme ]
 				if stateOverride then
-					local isUrlSpecial = self.scheme and SPECIAL_SCHEMAS[self.scheme]
+					local isUrlSpecial = self.scheme and SPECIAL_SCHEMAS[ self.scheme ]
 					if isUrlSpecial and not isSpecial then
 						return
 					end
@@ -883,24 +882,24 @@ parseScheme = function(self, str, startPos, endPos, base, stateOverride)
 					end
 				elseif isSpecial == true then
 					-- file state
-					parseFile(self, str, i + 1, endPos, base)
+					parseFile( self, str, i + 1, endPos, base )
 				elseif isSpecial and base and base.scheme == scheme then
 					-- special relative or authority state
-					parseSpecialRelativeOrAuthority(self, str, i + 1, endPos, base, isSpecial)
+					parseSpecialRelativeOrAuthority( self, str, i + 1, endPos, base, isSpecial )
 				elseif isSpecial then
 					-- special authority slashes state
-					parseSpecialAuthorityIgnoreSlashes(self, str, i + 1, endPos, base, isSpecial)
-				elseif string_byte(str, i + 1) == 0x2F then
+					parseSpecialAuthorityIgnoreSlashes( self, str, i + 1, endPos, base, isSpecial )
+				elseif string_byte( str, i + 1 ) == 0x2F then
 					-- path or authority state
 					parsePathOrAuthority(self, str, i + 2, endPos, base)
 				else
 					-- opaque path state
-					parseOpaquePath(self, str, i + 1, endPos)
+					parseOpaquePath( self, str, i + 1, endPos )
 				end
 				return
-			elseif isUpper(ch) then
+			elseif isUpper( ch ) then
 				doLowerCase = true
-			elseif not isLower(ch) and not isDigit(ch) and ch ~= 0x2B and ch ~= 0x2D and ch ~= 0x2E then
+			elseif not isLower( ch ) and not isDigit( ch ) and ch ~= 0x2B and ch ~= 0x2D and ch ~= 0x2E then
 				-- scheme have an invalid character, so it's not a scheme
 				break
 			end
@@ -909,56 +908,56 @@ parseScheme = function(self, str, startPos, endPos, base, stateOverride)
 
 	if not stateOverride then
 		-- no scheme state
-		return parseNoScheme(self, str, startPos, endPos, base)
+		return parseNoScheme( self, str, startPos, endPos, base )
 	end
 end
 
-parseNoScheme = function(self, str, startPos, endPos, base)
-	local startsWithFragment = string_byte(str, startPos) == 0x23
-	local baseHasOpaquePath = base and isstring(base.path)
-	if not base or (baseHasOpaquePath and not startsWithFragment) then
-		error("Invalid URL: Missing scheme")
+function parseNoScheme( self, str, startPos, endPos, base )
+	local startsWithFragment = string_byte( str, startPos ) == 0x23
+	local baseHasOpaquePath = base and isstring( base.path )
+	if not base or ( baseHasOpaquePath and not startsWithFragment ) then
+		error( "Invalid URL: Missing scheme" )
 	end
 
 	if baseHasOpaquePath and startsWithFragment then
 		self.scheme = base.scheme
 		self.path = base.path
 		self.query = base.query
-		return parseFragment(self, str, startPos + 1, endPos)
+		return parseFragment( self, str, startPos + 1, endPos )
 	elseif base.scheme ~= "file" then
-		return parseRelative(self, str, startPos, endPos, base, SPECIAL_SCHEMAS[base.scheme])
+		return parseRelative( self, str, startPos, endPos, base, SPECIAL_SCHEMAS[ base.scheme ] )
 	else
 		self.scheme = "file"
-		return parseFile(self, str, startPos, endPos, base)
+		return parseFile( self, str, startPos, endPos, base )
 	end
 end
 
-parseSpecialRelativeOrAuthority = function(self, str, startPos, endPos, base, isSpecial)
-	if string_byte(str, startPos) == 0x2F and string_byte(str, startPos + 1) == 0x2F then
+function parseSpecialRelativeOrAuthority( self, str, startPos, endPos, base, isSpecial )
+	if string_byte( str, startPos ) == 0x2F and string_byte( str, startPos + 1 ) == 0x2F then
 		-- special authority slashes state
-		return parseSpecialAuthorityIgnoreSlashes(self, str, startPos + 2, endPos, base, isSpecial)
+		return parseSpecialAuthorityIgnoreSlashes( self, str, startPos + 2, endPos, base, isSpecial )
 	else
 		-- relative state
 		self.scheme = base.scheme
-		return parseRelative(self, str, startPos, endPos, base, isSpecial)
+		return parseRelative( self, str, startPos, endPos, base, isSpecial )
 	end
 end
 
-parsePathOrAuthority = function(self, str, startPos, endPos, base)
-	if string_byte(str, startPos) == 0x2F then
-		return parseAuthority(self, str, startPos + 1, endPos)
+function parsePathOrAuthority( self, str, startPos, endPos, base )
+	if string_byte( str, startPos ) == 0x2F then
+		return parseAuthority( self, str, startPos + 1, endPos )
 	else
-		return parsePath(self, str, startPos, endPos)
+		return parsePath( self, str, startPos, endPos )
 	end
 end
 
-parseRelative = function(self, str, startPos, endPos, base, isSpecial)
+function parseRelative( self, str, startPos, endPos, base, isSpecial )
 	self.scheme = base.scheme
 
-	local ch = startPos <= endPos and string_byte(str, startPos)
-	if ch == 0x2F or (isSpecial and ch == 0x5C) then
+	local ch = startPos <= endPos and string_byte( str, startPos )
+	if ch == 0x2F or ( isSpecial and ch == 0x5C ) then
 		-- relative slash state
-		return parseRelativeSlash(self, str, startPos + 1, endPos, base, isSpecial)
+		return parseRelativeSlash( self, str, startPos + 1, endPos, base, isSpecial )
 	else
 		self.username = base.username
 		self.password = base.password
@@ -968,14 +967,14 @@ parseRelative = function(self, str, startPos, endPos, base, isSpecial)
 		local path
 		do
 			local _tab_0 = { }
-			local _obj_0 = (base.path or { })
+			local _obj_0 = ( base.path or { } )
 			local _idx_0 = 1
-			for _key_0, _value_0 in raw_pairs(_obj_0) do
+			for _key_0, _value_0 in raw_pairs( _obj_0)  do
 				if _idx_0 == _key_0 then
-					_tab_0[#_tab_0 + 1] = _value_0
+					_tab_0[ #_tab_0 + 1 ] = _value_0
 					_idx_0 = _idx_0 + 1
 				else
-					_tab_0[_key_0] = _value_0
+					_tab_0[ _key_0 ] = _value_0
 				end
 			end
 
@@ -985,17 +984,17 @@ parseRelative = function(self, str, startPos, endPos, base, isSpecial)
 		self.path = path
 
 		if ch == 0x3F then
-			return parseQuery(self, str, startPos + 1, endPos)
+			return parseQuery( self, str, startPos + 1, endPos )
 		elseif ch == 0x23 then
 			self.query = base.query
-			return parseFragment(self, str, startPos + 1, endPos)
+			return parseFragment( self, str, startPos + 1, endPos )
 		elseif ch then
 			local pathLen = #path
-			if pathLen ~= 1 or not isWindowsDriveLetter(path[1]) then
-				path[pathLen] = nil
+			if pathLen ~= 1 or not isWindowsDriveLetter( path[ 1 ] ) then
+				path[ pathLen ] = nil
 			end
 
-			return parsePath(self, str, startPos, endPos, isSpecial, path)
+			return parsePath( self, str, startPos, endPos, isSpecial, path )
 		end
 	end
 end
@@ -1078,7 +1077,7 @@ function parseHost( self, str, startPos, endPos, isSpecial, stateOverride )
 				return
 			end
 
-			parsePort(self, str, i + 1, endPos, isSpecial, stateOverride)
+			parsePort( self, str, i + 1, endPos, isSpecial, stateOverride )
 			endPos = i - 1
 			break
 		elseif ch == 0x5B then
@@ -1089,12 +1088,12 @@ function parseHost( self, str, startPos, endPos, isSpecial, stateOverride )
 	end
 
 	if isSpecial and startPos > endPos then
-		error("Invalid URL: Missing host")
-	elseif stateOverride and startPos == endPos and (self.username or self.password or self.port) then
+		error( "Invalid URL: Missing host" )
+	elseif stateOverride and startPos == endPos and ( self.username or self.password or self.port ) then
 		return
 	end
 
-	self.hostname = parseHostString(str, startPos, endPos, isSpecial)
+	self.hostname = parseHostString( str, startPos, endPos, isSpecial )
 end
 
 function parsePort( self, str, startPos, endPos, defaultPort, stateOverride )
@@ -1183,20 +1182,20 @@ end
 function parseFileHost( self, str, startPos, endPos, stateOverride )
 	local i = startPos
 	while true do
-		local ch = i <= endPos and string_byte(str, i)
+		local ch = i <= endPos and string_byte( str, i )
 		if ch == 0x2F or ch == 0x5C or ch == 0x3F or ch == 0x23 or not ch then
 			local hostLen = i - startPos
-			if not stateOverride and hostLen == 2 and isWindowsDriveLetterCodePoints(string_byte(str, startPos), string_byte(str, startPos + 1), false) then
-				parsePath(self, str, startPos, endPos, true)
+			if not stateOverride and hostLen == 2 and isWindowsDriveLetterCodePoints( string_byte( str, startPos ), string_byte( str, startPos + 1 ), false ) then
+				parsePath( self, str, startPos, endPos, true )
 			elseif hostLen == 0 then
 				self.hostname = ""
 				if stateOverride then
 					return
 				end
 
-				parsePathStart(self, str, i, endPos, true)
+				parsePathStart( self, str, i, endPos, true )
 			else
-				local hostname = parseHostString(str, startPos, i - 1, true)
+				local hostname = parseHostString( str, startPos, i - 1, true )
 				if hostname == "localhost" then
 					hostname = ""
 				end
@@ -1207,7 +1206,7 @@ function parseFileHost( self, str, startPos, endPos, stateOverride )
 					return
 				end
 
-				parsePathStart(self, str, i, endPos, true)
+				parsePathStart( self, str, i, endPos, true )
 			end
 
 			break
@@ -1341,9 +1340,9 @@ local function parseQueryString( str, output )
 	local count = 0
 
 	while true do
-		local ch = string_byte(str, pointer)
+		local ch = string_byte( str, pointer )
 		if ch == 0x26 or not ch then
-			value = string_sub(str, startPos, pointer - 1)
+			value = string_sub( str, startPos, pointer - 1 )
 			if name == nil then
 				name = value
 				value = nil
@@ -1355,8 +1354,8 @@ local function parseQueryString( str, output )
 			end
 
 			if name ~= "" or value then
-				name = percentDecode(name, DECODE_LOOKUP_TABLE)
-				value = value and percentDecode(value, DECODE_LOOKUP_TABLE) or nil
+				name = percentDecode( name, DECODE_LOOKUP_TABLE )
+				value = value and percentDecode( value, DECODE_LOOKUP_TABLE ) or nil
 				count = count + 1
 				output[ count ] = { name, value }
 			end
@@ -1425,7 +1424,7 @@ local function serializeIPv6( address )
 
 	-- Find first longest sequence of zeros
 	for i = 1, 8 do
-		if address[i] == 0 then
+		if address[ i ] == 0 then
 			if zeroStart == 0 then
 				zeroStart = i
 			elseif i - zeroStart > compressLen then
@@ -1440,7 +1439,7 @@ local function serializeIPv6( address )
 	local ignore0 = false
 	for i = 1, 8 do
 		if ignore0 then
-			if address[i] == 0 then
+			if address[ i ] == 0 then
 				goto _continue_0
 			end
 
